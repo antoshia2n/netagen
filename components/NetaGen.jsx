@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect } from "react"
 import {
   Sparkles, Star, Check, Plus, X, Settings,
   Inbox, ChevronDown, ChevronRight, User, RefreshCw,
-  Lightbulb, ClipboardPaste, ZoomIn, Copy
+  Lightbulb, ClipboardPaste, ZoomIn, Copy, Trash2, RotateCcw
 } from "lucide-react"
 
 // ── palette ──────────────────────────────────────────────
@@ -498,6 +498,48 @@ ${text}
   )
 }
 
+function TrashBox({ trash, onRestore, onClear }) {
+  const allItems = Object.entries(trash).flatMap(([cat, items]) => items.map(item => ({ cat, item })))
+  if (allItems.length === 0) return null
+  return (
+    <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden", marginTop: 8 }}>
+      <div style={{
+        padding: "8px 12px", background: C.surfaceAlt,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <Trash2 size={12} color={C.textMuted} strokeWidth={1.5} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: C.textMuted }}>ゴミ箱</span>
+          <span style={{ fontSize: 11, color: C.textMuted }}>({allItems.length})</span>
+        </div>
+        <button onClick={onClear} style={{
+          fontSize: 11, color: C.textMuted, background: "none",
+          border: "none", cursor: "pointer", padding: "2px 4px",
+        }}>全削除</button>
+      </div>
+      <div style={{ padding: "10px 12px", background: C.surface }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {allItems.map(({ cat, item }) => (
+            <div key={`${cat}_${item}`} style={{
+              display: "flex", alignItems: "center", gap: 3,
+              padding: "3px 8px 3px 10px", borderRadius: 20,
+              border: `1.5px solid ${C.border}`,
+              background: C.surfaceAlt, fontSize: 12, color: C.textMuted,
+            }}>
+              <span>{item}</span>
+              <span style={{ fontSize: 10, color: C.textMuted, marginLeft: 2 }}>({cat})</span>
+              <button onClick={() => onRestore(cat, item)} title="復元" style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: C.success, padding: "0 0 0 3px", display: "flex", alignItems: "center",
+              }}><RotateCcw size={10} /></button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function IdeaCard({ idea, onToggleFav, onToggleUsed, onDrillDown }) {
   return (
     <div style={{
@@ -543,6 +585,7 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
   const [activeAccountId, setActiveAccountId] = useState(initialAccounts[0]?.id || null)
   const [ideas, setIdeas] = useState(initialIdeas)
   const [selected, setSelected] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
+  const [trash, setTrash] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
   const [extraCondition, setExtraCondition] = useState("")
   const [loading, setLoading] = useState(false)
   const [adjacent, setAdjacent] = useState([])
@@ -585,6 +628,20 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
     const newData = { ...data, [cat]: (data[cat] || []).filter(x => x !== item) }
     updateAccountData(newData)
     setSelected(prev => ({ ...prev, [cat]: (prev[cat] || []).filter(x => x !== item) }))
+    setTrash(prev => ({ ...prev, [cat]: [...(prev[cat] || []), item] }))
+  }
+
+  function restoreItem(cat, item) {
+    const current = data[cat] || []
+    if (!current.includes(item)) {
+      const newData = { ...data, [cat]: [...current, item] }
+      updateAccountData(newData)
+    }
+    setTrash(prev => ({ ...prev, [cat]: (prev[cat] || []).filter(x => x !== item) }))
+  }
+
+  function clearTrash() {
+    setTrash({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
   }
 
   async function addAccount(info) {
@@ -760,6 +817,8 @@ ${selEntries.map(([k, v]) => `・${k}: ${v.join("、")}`).join("\n")}${extraPart
                 onRemove={item => removeItem(cat, item)}
                 editMode={editMode} />
             ))}
+
+            <TrashBox trash={trash} onRestore={restoreItem} onClear={clearTrash} />
 
             <div style={{ marginTop: 10 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: C.textSub, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>追加条件（任意）</label>
