@@ -254,6 +254,7 @@ function DrillDownPanel({ idea, onClose, onToggleFav, onToggleUsed }) {
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState("angles")
   const [copied, setCopied] = useState(false)
+  const [extraInstruction, setExtraInstruction] = useState("")
 
   const MODES = [
     { id: "angles", label: "切り口を展開", desc: "角度違いのタイトルを8本" },
@@ -263,10 +264,11 @@ function DrillDownPanel({ idea, onClose, onToggleFav, onToggleUsed }) {
 
   async function run() {
     setLoading(true); setResult(null)
+    const extraPart = extraInstruction.trim() ? `\n追加指示: ${extraInstruction.trim()}` : ""
     const prompts = {
-      angles: `以下のコンテンツタイトルを起点に、角度を変えた派生タイトルを8本生成してください。\nタイトル:「${idea.title}」\n条件: 同じテーマを別の切り口・問いの型で。タイトルのみ、番号なし、改行区切り。`,
-      outline: `以下のコンテンツタイトルの記事・投稿構成案を作ってください。\nタイトル:「${idea.title}」\n出力: H2見出し4〜6個、各見出しに1行ポイントを添えてシンプルに。`,
-      hooks: `以下のタイトルに合う冒頭文を3パターン。\nタイトル:「${idea.title}」\n条件: 各50〜80文字、問いかけ型・共感型・衝撃型で。番号付き。`,
+      angles: `以下のコンテンツタイトルを起点に、角度を変えた派生タイトルを8本生成してください。\nタイトル:「${idea.title}」\n条件: 同じテーマを別の切り口・問いの型で。タイトルのみ、番号なし、改行区切り。${extraPart}`,
+      outline: `以下のコンテンツタイトルの記事・投稿構成案を作ってください。\nタイトル:「${idea.title}」\n出力: H2見出し4〜6個、各見出しに1行ポイントを添えてシンプルに。${extraPart}`,
+      hooks: `以下のタイトルに合う冒頭文を3パターン。\nタイトル:「${idea.title}」\n条件: 各50〜80文字、問いかけ型・共感型・衝撃型で。番号付き。${extraPart}`,
     }
     try {
       const res = await fetch("/api/generate", {
@@ -332,6 +334,17 @@ function DrillDownPanel({ idea, onClose, onToggleFav, onToggleUsed }) {
                 <span style={{ fontSize: 11, color: C.textMuted }}>{m.desc}</span>
               </button>
             ))}
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.textSub, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>追加条件（任意）</label>
+            <textarea value={extraInstruction} onChange={e => setExtraInstruction(e.target.value)}
+              placeholder="例：この構成をベースに、体験談スタイルで、初心者向けに..." rows={2}
+              style={{
+                width: "100%", boxSizing: "border-box", padding: "7px 9px",
+                fontSize: 12, lineHeight: 1.6, border: `1px solid ${C.borderStrong}`,
+                borderRadius: 7, resize: "none", outline: "none",
+                fontFamily: "'Noto Sans JP', sans-serif", color: C.text, background: C.surfaceAlt,
+              }} />
           </div>
           <button onClick={run} disabled={loading} style={{
             width: "100%", padding: "9px 0", marginTop: 12,
@@ -731,7 +744,7 @@ ${selEntries.map(([k, v]) => `・${k}: ${v.join("、")}`).join("\n")}${extraPart
       const json = await res.json()
       const text = json.content?.[0]?.text || ""
       const titles = text.split("\n").map(t => t.trim()).filter(t => t.length > 5).slice(0, 10)
-      const category = selEntries.map(([, v]) => v[0]).join(" × ")
+      const category = selEntries.map(([k, v]) => `${v.join("・")}`).join(" × ")
 
       // optimistic
       const tempIdeas = titles.map((title, i) => ({
