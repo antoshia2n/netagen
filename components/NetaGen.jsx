@@ -34,6 +34,7 @@ const DEFAULT_DATA = {
   "コンプレックスとステータス": [],
   場面: [],
   投稿スタイル: ["物語", "体験談", "失敗談", "ビフォーアフター", "図解", "ステップ解説", "よくある誤解", "持論", "逆説", "あるある", "本音トーク", "比較", "ランキング"],
+  属性: ["30代", "40代", "会社員", "フリーランス", "副業中", "転職活動中", "婚活中", "子育て中", "管理職", "新卒・若手"],
 }
 
 const CAT_COLORS = {
@@ -42,6 +43,7 @@ const CAT_COLORS = {
   "コンプレックスとステータス": C.purple,
   場面: C.orange,
   投稿スタイル: "#B07040",
+  属性: "#2A7A7A",
 }
 
 // ── API helpers ───────────────────────────────────────────
@@ -632,8 +634,8 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
   const [accounts, setAccounts] = useState(initialAccounts)
   const [activeAccountId, setActiveAccountId] = useState(initialAccounts[0]?.id || null)
   const [ideas, setIdeas] = useState(initialIdeas)
-  const [selected, setSelected] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
-  const [trash, setTrash] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
+  const [selected, setSelected] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [], 属性: [] })
+  const [trash, setTrash] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [], 属性: [] })
   const [extraCondition, setExtraCondition] = useState("")
   const [loading, setLoading] = useState(false)
   const [adjacent, setAdjacent] = useState([])
@@ -689,7 +691,7 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
   }
 
   function clearTrash() {
-    setTrash({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
+    setTrash({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [], 属性: [] })
   }
 
   async function addAccount(info) {
@@ -697,14 +699,14 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
     if (created.id) {
       setAccounts(prev => [...prev, created])
       setActiveAccountId(created.id)
-      setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
+      setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [], 属性: [] })
     }
     setShowAddAccount(false)
   }
 
   function switchAccount(id) {
     setActiveAccountId(id)
-    setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
+    setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [], 属性: [] })
     setAdjacent([])
   }
 
