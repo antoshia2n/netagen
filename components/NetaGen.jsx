@@ -498,6 +498,23 @@ ${text}
   )
 }
 
+function AdjacentWord({ word, onAdd }) {
+  const [added, setAdded] = useState(false)
+  return (
+    <button onClick={() => { onAdd(); setAdded(true) }}
+      disabled={added} style={{
+        padding: "3px 9px", borderRadius: 20, fontSize: 11,
+        border: `1.5px solid ${added ? C.success : C.purple}`,
+        background: added ? C.successLight : C.purpleLight,
+        color: added ? C.success : C.purple,
+        cursor: added ? "default" : "pointer",
+        display: "flex", alignItems: "center", gap: 3, transition: "all 0.12s",
+      }}>
+      {added ? <Check size={9} /> : <Plus size={9} />}{word}
+    </button>
+  )
+}
+
 function TrashBox({ trash, onRestore, onClear }) {
   const allItems = Object.entries(trash).flatMap(([cat, items]) => items.map(item => ({ cat, item })))
   if (allItems.length === 0) return null
@@ -871,22 +888,9 @@ ${selEntries.map(([k, v]) => `・${k}: ${v.join("、")}`).join("\n")}${extraPart
                   <>
                     <p style={{ fontSize: 10, color: C.textMuted, margin: "0 0 7px" }}>＋で強ワードに追加</p>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {adjacent.map(word => {
-                        const [added, setAdded] = useState(false)
-                        return (
-                          <button key={word} onClick={() => { addItem("強ワード", word); setAdded(true) }}
-                            disabled={added} style={{
-                              padding: "3px 9px", borderRadius: 20, fontSize: 11,
-                              border: `1.5px solid ${added ? C.success : C.purple}`,
-                              background: added ? C.successLight : C.purpleLight,
-                              color: added ? C.success : C.purple,
-                              cursor: added ? "default" : "pointer",
-                              display: "flex", alignItems: "center", gap: 3, transition: "all 0.12s",
-                            }}>
-                            {added ? <Check size={9} /> : <Plus size={9} />}{word}
-                          </button>
-                        )
-                      })}
+                      {adjacent.map(word => (
+                        <AdjacentWord key={word} word={word} onAdd={() => addItem("強ワード", word)} />
+                      ))}
                     </div>
                   </>
                 )
