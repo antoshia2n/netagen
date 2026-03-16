@@ -636,7 +636,11 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
   const [ideas, setIdeas] = useState(initialIdeas)
   const [selected, setSelected] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [], 属性: [] })
   const [trash, setTrash] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [], 属性: [] })
-  const [extraCondition, setExtraCondition] = useState("")
+  const [extraConditions, setExtraConditions] = useState({})
+  const extraCondition = extraConditions[activeAccountId] || ""
+  function setExtraCondition(val) {
+    setExtraConditions(prev => ({ ...prev, [activeAccountId]: val }))
+  }
   const [loading, setLoading] = useState(false)
   const [adjacent, setAdjacent] = useState([])
   const [loadingAdjacent, setLoadingAdjacent] = useState(false)
@@ -746,7 +750,7 @@ ${selEntries.map(([k, v]) => `・${k}: ${v.join("、")}`).join("\n")}${extraPart
       const json = await res.json()
       const text = json.content?.[0]?.text || ""
       const titles = text.split("\n").map(t => t.trim()).filter(t => t.length > 5).slice(0, 10)
-      const category = selEntries.map(([k, v]) => `${v.join("・")}`).join(" × ")
+      const category = selEntries.flatMap(([, v]) => v).join(" × ")
 
       // optimistic
       const tempIdeas = titles.map((title, i) => ({
