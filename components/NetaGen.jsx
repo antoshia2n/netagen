@@ -33,6 +33,7 @@ const DEFAULT_DATA = {
   問いの型: ["とは何か", "がある人とない人の違い"],
   "コンプレックスとステータス": [],
   場面: [],
+  投稿スタイル: ["物語", "体験談", "失敗談", "ビフォーアフター", "図解", "ステップ解説", "よくある誤解", "持論", "逆説", "あるある", "本音トーク", "比較", "ランキング"],
 }
 
 const CAT_COLORS = {
@@ -40,6 +41,7 @@ const CAT_COLORS = {
   問いの型: C.success,
   "コンプレックスとステータス": C.purple,
   場面: C.orange,
+  投稿スタイル: "#B07040",
 }
 
 // ── API helpers ───────────────────────────────────────────
@@ -87,7 +89,11 @@ function Folder({ title, items, selected, onToggle, onAdd, onRemove, editMode })
 
   function handleAdd() {
     if (input.trim()) { onAdd(input.trim()); setInput("") }
-    setAdding(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter") { e.preventDefault(); handleAdd() }
+    if (e.key === "Escape") { setAdding(false); setInput("") }
   }
 
   return (
@@ -105,7 +111,7 @@ function Folder({ title, items, selected, onToggle, onAdd, onRemove, editMode })
           </span>
         )}
         {editMode && (
-          <span onClick={e => { e.stopPropagation(); setAdding(v => !v) }} style={{ color: C.accent, marginLeft: 4 }}>
+          <span onClick={e => { e.stopPropagation(); setAdding(v => !v); setInput("") }} style={{ color: C.accent, marginLeft: 4 }}>
             <Plus size={13} />
           </span>
         )}
@@ -121,17 +127,24 @@ function Folder({ title, items, selected, onToggle, onAdd, onRemove, editMode })
             {items.length === 0 && <span style={{ fontSize: 11, color: C.textMuted }}>ワードを追加してください</span>}
           </div>
           {adding && (
-            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-              <input autoFocus value={input} onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleAdd()}
-                placeholder="追加..." style={{
-                  flex: 1, padding: "4px 8px", border: `1px solid ${C.borderStrong}`,
-                  borderRadius: 6, fontSize: 12, outline: "none", background: C.surface,
-                }} />
-              <button onClick={handleAdd} style={{
-                padding: "4px 10px", background: C.accent, color: "#fff",
-                border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer",
-              }}>追加</button>
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                <input autoFocus value={input} onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="追加（Enterで連続追加、Escで終了）" style={{
+                    flex: 1, padding: "4px 8px", border: `1px solid ${C.borderStrong}`,
+                    borderRadius: 6, fontSize: 12, outline: "none", background: C.surface,
+                  }} />
+                <button onClick={handleAdd} style={{
+                  padding: "4px 10px", background: C.accent, color: "#fff",
+                  border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer",
+                }}>追加</button>
+                <button onClick={() => { setAdding(false); setInput("") }} style={{
+                  padding: "4px 8px", background: "none", color: C.textMuted,
+                  border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12, cursor: "pointer",
+                }}>完了</button>
+              </div>
+              <p style={{ margin: "5px 0 0", fontSize: 11, color: C.textMuted }}>Enterで連続追加・Escまたは「完了」で閉じる</p>
             </div>
           )}
         </div>
@@ -557,7 +570,7 @@ function TrashBox({ trash, onRestore, onClear }) {
   )
 }
 
-function IdeaCard({ idea, onToggleFav, onToggleUsed, onDrillDown }) {
+function IdeaCard({ idea, onToggleFav, onToggleUsed, onDrillDown, onDelete }) {
   return (
     <div style={{
       background: C.surface,
@@ -591,6 +604,11 @@ function IdeaCard({ idea, onToggleFav, onToggleUsed, onDrillDown }) {
             display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
           }}>{btn.icon}</button>
         ))}
+        <button onClick={() => onDelete(idea.id)} title="削除" style={{
+          width: 27, height: 27, borderRadius: 6, border: `1px solid ${C.border}`,
+          background: C.surfaceAlt, color: C.textMuted,
+          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+        }}><Trash2 size={13} strokeWidth={1.5} /></button>
       </div>
     </div>
   )
@@ -601,8 +619,8 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
   const [accounts, setAccounts] = useState(initialAccounts)
   const [activeAccountId, setActiveAccountId] = useState(initialAccounts[0]?.id || null)
   const [ideas, setIdeas] = useState(initialIdeas)
-  const [selected, setSelected] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
-  const [trash, setTrash] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
+  const [selected, setSelected] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
+  const [trash, setTrash] = useState({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
   const [extraCondition, setExtraCondition] = useState("")
   const [loading, setLoading] = useState(false)
   const [adjacent, setAdjacent] = useState([])
@@ -658,7 +676,7 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
   }
 
   function clearTrash() {
-    setTrash({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
+    setTrash({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
   }
 
   async function addAccount(info) {
@@ -666,14 +684,14 @@ export default function NetaGen({ initialAccounts, initialIdeas }) {
     if (created.id) {
       setAccounts(prev => [...prev, created])
       setActiveAccountId(created.id)
-      setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
+      setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
     }
     setShowAddAccount(false)
   }
 
   function switchAccount(id) {
     setActiveAccountId(id)
-    setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [] })
+    setSelected({ 強ワード: [], 問いの型: [], "コンプレックスとステータス": [], 場面: [], 投稿スタイル: [] })
     setAdjacent([])
   }
 
@@ -779,6 +797,12 @@ ${selEntries.map(([k, v]) => `・${k}: ${v.join("、")}`).join("\n")}${extraPart
     setIdeas(prev => prev.map(i => i.id === id ? { ...i, used: newUsed } : i))
     if (drillTarget?.id === id) setDrillTarget(prev => ({ ...prev, used: newUsed }))
     if (!id.startsWith("temp_")) apiPut(`/api/ideas/${id}`, { fav: idea.fav, used: newUsed })
+  }
+
+  function deleteIdea(id) {
+    setIdeas(prev => prev.filter(i => i.id !== id))
+    if (drillTarget?.id === id) setDrillTarget(null)
+    if (!id.startsWith("temp_")) apiDelete(`/api/ideas/${id}`)
   }
 
   const displayList = tab === "generate" ? accountIdeas : tab === "fav" ? favIdeas : usedIdeas
@@ -934,7 +958,7 @@ ${selEntries.map(([k, v]) => `・${k}: ${v.join("、")}`).join("\n")}${extraPart
               {displayList.map(idea => (
                 <IdeaCard key={idea.id} idea={idea}
                   onToggleFav={toggleFav} onToggleUsed={toggleUsed}
-                  onDrillDown={setDrillTarget} />
+                  onDrillDown={setDrillTarget} onDelete={deleteIdea} />
               ))}
             </div>
           )}
